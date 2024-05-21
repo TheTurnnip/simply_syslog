@@ -10,14 +10,15 @@ class Server:
     def __init__(self, protocol: str,
                  address: str, tcp_port: int,
                  udp_port: int, buffer: Buffer,
-                 max_buffer_age: int, max_message_size: int,
-                 max_tcp_connections: int) -> None:
+                 max_buffer_size: int, max_buffer_age: int,
+                 max_message_size: int, max_tcp_connections: int) -> None:
         if not isinstance(buffer, Buffer):
             raise TypeError("The provided buffer is not of the Buffer type.")
         self.protocol = str(protocol)
         self.address = str(address)
         self.tcp_port = int(tcp_port)
         self.udp_port = int(udp_port)
+        self.max_buffer_length = int(max_buffer_size)
         self.max_buffer_age = int(max_buffer_age)
         self.max_message_size = int(max_message_size)
         self.max_tcp_connections = int(max_tcp_connections)
@@ -35,10 +36,12 @@ class Server:
         return tcp_server
 
     def start_monitors(self):
-        # TODO: Add the needed args to the threads.
+        monitor_buffer_size_args = [self.buffer, self.max_buffer_length]
+        monitor_buffer_age_args = [self.buffer, self.max_buffer_age]
         monitor_buffer_age_thread = threading.Thread(target=monitor_buffer_age,
-                                                     args=[])
-        monitor_buffer_size_thread = threading.Thread(target=monitor_buffer_size, args=[])
+                                                     args=monitor_buffer_age_args)
+        monitor_buffer_size_thread = threading.Thread(target=monitor_buffer_size,
+                                                      args=monitor_buffer_size_args)
         monitor_buffer_age_thread.start()
         monitor_buffer_size_thread.start()
 
@@ -67,7 +70,6 @@ class Server:
                                                      args=[])
                 udp_server_thread.start()
                 tcp_server_thread.start()
-
             case _:
                 raise ValueError("No valid protocol provided.")
 
