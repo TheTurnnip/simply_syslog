@@ -10,13 +10,15 @@ class Server:
     def __init__(self, protocol: str,
                  address: str, tcp_port: int,
                  udp_port: int, buffer: Buffer,
-                 max_message_size: int, max_tcp_connections: int) -> None:
+                 max_buffer_age: int, max_message_size: int,
+                 max_tcp_connections: int) -> None:
         if not isinstance(buffer, Buffer):
             raise TypeError("The provided buffer is not of the Buffer type.")
         self.protocol = str(protocol)
         self.address = str(address)
         self.tcp_port = int(tcp_port)
         self.udp_port = int(udp_port)
+        self.max_buffer_age = int(max_buffer_age)
         self.max_message_size = int(max_message_size)
         self.max_tcp_connections = int(max_tcp_connections)
         self.buffer = buffer
