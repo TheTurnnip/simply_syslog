@@ -12,11 +12,11 @@ class Buffer:
         for item in args:
             self.add_validated_item(item)
 
-
     def append(self, value):
         self.add_validated_item(value)
 
     def flush(self):
+        del(self.buffer_items)
         self.buffer_items = []
 
     def add_validated_item(self, item):
@@ -29,13 +29,19 @@ class Buffer:
         self.buffer_items.append(item)
 
     def __iter__(self):
-        ...
+        self.pointer = 0
+        return self
 
     def __next__(self):
-        ...
-
-    def __len__(self):
-        ...
+        if self.pointer < len(self.buffer_items):
+            current_pointer = self.pointer
+            self.pointer += 1
+            return self.buffer_items[current_pointer]
+        else:
+            raise StopIteration
 
     def __str__(self):
-        ...
+        return str(self.buffer_items)
+
+    def __len__(self):
+        return len(self.buffer_items)
