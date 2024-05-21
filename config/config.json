@@ -1,7 +1,8 @@
 {
   "protocol": "UDP",
   "bind_address": "127.0.0.1",
-  "port": "514",
+  "udp_port": "514",
+  "tcp_port": "514",
   "max_tcp_connections": "10",
   "buffer_length": "10",
   "buffer_lifespan": "5",
