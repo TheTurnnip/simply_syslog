@@ -1,0 +1,23 @@
+
+class Buffer:
+
+    def __init__(self):
+        ...
+
+    def append(self):
+        ...
+
+    def flush(self):
+        ...
+
+    def __iter__(self):
+        ...
+
+    def __next__(self):
+        ...
+
+    def __len__(self):
+        ...
+
+    def __str__(self):
+        ...

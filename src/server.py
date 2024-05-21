@@ -1,0 +1,19 @@
+
+class Server():
+    def __init__(self):
+        ...
+
+    def make_udp_server(self):
+        ...
+
+    def make_tcp_server(self):
+        ...
+
+    def start_monitors(self):
+        ...
+
+    def start(self):
+        ...
+
+    def stop(self):
+        ...
