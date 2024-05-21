@@ -8,14 +8,14 @@ from src.server_tasks import (monitor_buffer_size, monitor_buffer_age,
 
 class Server:
     def __init__(self, protocol: str,
-                 address: str, tcp_port: int,
+                 address: tuple, tcp_port: int,
                  udp_port: int, buffer: Buffer,
                  max_buffer_size: int, max_buffer_age: int,
                  max_message_size: int, max_tcp_connections: int) -> None:
         if not isinstance(buffer, Buffer):
             raise TypeError("The provided buffer is not of the Buffer type.")
         self.protocol = str(protocol)
-        self.address = str(address)
+        self.address = address
         self.tcp_port = int(tcp_port)
         self.udp_port = int(udp_port)
         self.max_buffer_length = int(max_buffer_size)
@@ -51,8 +51,11 @@ class Server:
             case "UDP":
                 udp_server = self.make_udp_server()
                 self.start_monitors()
+                udp_server_args = [udp_server,
+                                   self.buffer,
+                                   self.max_message_size]
                 udp_server_thread = threading.Thread(target=run_udp_server,
-                                                     args=[])
+                                                     args=udp_server_args)
                 udp_server_thread.start()
             case "TCP":
                 tcp_server = self.make_tcp_server()
@@ -64,8 +67,11 @@ class Server:
                 udp_server = self.make_udp_server()
                 tcp_server = self.make_tcp_server()
                 self.start_monitors()
+                udp_server_args = [udp_server,
+                                   self.buffer,
+                                   self.max_message_size]
                 udp_server_thread = threading.Thread(target=run_udp_server,
-                                                     args=[])
+                                                     args=udp_server_args)
                 tcp_server_thread = threading.Thread(target=run_tcp_server,
                                                      args=[])
                 udp_server_thread.start()
