@@ -5,7 +5,6 @@ from src.server import Server
 
 
 def main():
-    config = None
     with open("config/config.json", "r") as config:
         config = json.load(config)
 

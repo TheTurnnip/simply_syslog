@@ -23,10 +23,12 @@ class Buffer:
         if not isinstance(item, self.buffer_type):
             raise TypeError(f"Item {item} is not of the type "
                             f"{self.buffer_type}")
-        if len(self.buffer_items) >= self.max_size:
-            raise OverflowError("A buffer may not be initialized with more "
-                                "items in the buffer than max size set.")
+        if len(self.buffer_items) > self.max_size:
+            raise OverflowError(f"The max size of the buffer "
+                                f"({self.max_size}), the buffer was exceeded "
+                                f"by {len(self) - self.max_size}")
         self.buffer_items.append(item)
+        self.last_append_time = time.time()
 
     def __iter__(self):
         self.pointer = 0
