@@ -2,8 +2,8 @@ import socket
 import threading
 
 from src.buffer import Buffer
-from src.server_tasks import (monitor_buffer_size, monitor_buffer_age,
-                              run_udp_server, run_tcp_server)
+from src.server_tasks import (monitor_buffer_age, run_udp_server,
+                              run_tcp_server)
 
 
 class Server:
@@ -13,7 +13,7 @@ class Server:
                  max_buffer_size: int, max_buffer_age: int,
                  max_message_size: int, max_tcp_connections: int) -> None:
         if not isinstance(buffer, Buffer):
-            raise TypeError("The provided buffer is not of the Buffer type.")
+            raise TypeError("The provided message_buffer is not of the Buffer type.")
         self.protocol = str(protocol)
         self.address = address
         self.tcp_port = int(tcp_port)
@@ -23,6 +23,8 @@ class Server:
         self.max_message_size = int(max_message_size)
         self.max_tcp_connections = int(max_tcp_connections)
         self.buffer = buffer
+        # Ensures files are writen to via tasks in the correct order.
+        self.write_lock = threading.Lock()
 
     def make_udp_server(self) -> socket.socket:
         udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,41 +37,41 @@ class Server:
         tcp_server.listen(self.max_tcp_connections)
         return tcp_server
 
-    def start_monitors(self):
-        monitor_buffer_size_args = [self.buffer, self.max_buffer_length]
-        monitor_buffer_age_args = [self.buffer, self.max_buffer_age]
+    def start_buffer_age_monitor(self):
+        monitor_buffer_age_args = [self.buffer,
+                                   self.max_buffer_age,
+                                   self.write_lock]
         monitor_buffer_age_thread = threading.Thread(target=monitor_buffer_age,
                                                      args=monitor_buffer_age_args)
-        monitor_buffer_size_thread = threading.Thread(target=monitor_buffer_size,
-                                                      args=monitor_buffer_size_args)
         monitor_buffer_age_thread.start()
-        monitor_buffer_size_thread.start()
 
     def start(self):
         # TODO: Add the needed args to the threads.
         match self.protocol.upper().strip():
             case "UDP":
                 udp_server = self.make_udp_server()
-                self.start_monitors()
+                self.start_buffer_age_monitor()
                 udp_server_args = [udp_server,
                                    self.buffer,
-                                   self.max_message_size]
+                                   self.max_message_size,
+                                   self.write_lock]
                 udp_server_thread = threading.Thread(target=run_udp_server,
                                                      args=udp_server_args)
                 udp_server_thread.start()
             case "TCP":
                 tcp_server = self.make_tcp_server()
-                self.start_monitors()
+                self.start_buffer_age_monitor()
                 tcp_server_thread = threading.Thread(target=run_tcp_server,
                                                      args=[])
                 tcp_server_thread.start()
             case "BOTH":
                 udp_server = self.make_udp_server()
                 tcp_server = self.make_tcp_server()
-                self.start_monitors()
+                self.start_buffer_age_monitor()
                 udp_server_args = [udp_server,
                                    self.buffer,
-                                   self.max_message_size]
+                                   self.max_message_size,
+                                   self.write_lock]
                 udp_server_thread = threading.Thread(target=run_udp_server,
                                                      args=udp_server_args)
                 tcp_server_thread = threading.Thread(target=run_tcp_server,
