@@ -5,19 +5,8 @@ import time
 from src.buffer import Buffer
 
 
-# def monitor_buffer_size(message_buffer: Buffer, message_buffer_length: int) -> None:
-#     do_monitor = True
-#     while do_monitor:
-#         if len(message_buffer) == message_buffer_length:
-#             print("\nDumped messages due to message_buffer size.")
-#             # TODO: Add the syslog message dump.
-#             write_thread = threading.Thread(target=write_to_disk, args=[message_buffer])
-#             write_thread.start()
-#             write_thread.join()
-#             message_buffer.flush()
-
 def monitor_buffer_age(message_buffer: Buffer, max_buffer_age: int,
-                       write_lock: threading.RLock) -> None:
+                       write_lock: threading.Lock) -> None:
     do_monitor = True
     while do_monitor:
         current_time = time.time()
@@ -35,7 +24,7 @@ def monitor_buffer_age(message_buffer: Buffer, max_buffer_age: int,
             message_buffer.last_append_time = time.time()
 
 def run_udp_server(server: socket.socket, message_buffer: Buffer,
-                   max_message_size: int, write_lock: threading.RLock) -> None:
+                   max_message_size: int, write_lock: threading.Lock) -> None:
     is_running = True
     while is_running:
         message, address = server.recvfrom(max_message_size)
