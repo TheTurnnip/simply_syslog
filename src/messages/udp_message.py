@@ -69,4 +69,5 @@ class UDPMessage(AbstractMessage):
         Returns:
             str: The string representation of the class data.
         """
-        return f"{self._is_written} | {self._address} -> {self._message}"
+        return (f"Written: {self._is_written} | {self._address}:"
+                f" {self._message}")

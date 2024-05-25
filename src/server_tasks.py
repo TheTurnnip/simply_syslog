@@ -14,7 +14,9 @@ def monitor_buffer_age(message_buffer: Buffer, max_buffer_age: int,
         buffer_append_time = message_buffer.last_append_time
         time_from_last_append = current_time - buffer_append_time
         buffer_length = len(message_buffer)
-        if time_from_last_append > max_buffer_age and buffer_length >= 1:
+        buffer_is_expired = time_from_last_append > max_buffer_age
+        buffer_has_items = buffer_length >= 1
+        if buffer_is_expired and buffer_has_items:
             print("\nDumped the messages due to the message_buffer age.")
             # TODO: Add the syslog message dump.
             write_lock.acquire()
