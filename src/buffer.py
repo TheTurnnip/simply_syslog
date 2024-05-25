@@ -19,7 +19,8 @@ class Buffer:
         buffer_item_index = len(self.buffer_items)
         while buffer_item_index:
             buffer_item_index -= 1
-            if self.buffer_items[buffer_item_index].is_written is True:
+            is_written = self.buffer_items[buffer_item_index].is_written
+            if is_written is True:
                 del self.buffer_items[buffer_item_index]
 
     def add_validated_item(self, item):

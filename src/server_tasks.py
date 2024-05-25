@@ -40,6 +40,7 @@ def run_udp_server(server: socket.socket, message_buffer: Buffer,
             write_lock.acquire()
             write_to_disk(message_buffer)
             message_buffer.flush()
+            message_buffer.append(udp_message)
             write_lock.release()
         # TODO: Remove this message.
         print(f"\n\tConnection from: {address}\n\tMessage: {message}")
@@ -53,3 +54,6 @@ def write_to_disk(buffer: Buffer) -> None:
             print(f"Wrote the message to disk: {message.message}")
             syslog_file.write(f"{message.message}\n")
             message.is_written = True
+
+def parse_syslog_message(message: bytes) -> str:
+    ...
