@@ -3,6 +3,7 @@ import threading
 import time
 
 from src.buffer import Buffer
+from src.messages.udp_message import UDPMessage
 
 
 def monitor_buffer_age(message_buffer: Buffer, max_buffer_age: int,
@@ -28,9 +29,12 @@ def run_udp_server(server: socket.socket, message_buffer: Buffer,
     is_running = True
     while is_running:
         message, address = server.recvfrom(max_message_size)
+        udp_message = UDPMessage(address, message)
+        print(udp_message)
         if len(message_buffer) < message_buffer.max_size:
-            message_buffer.append(message)
+            message_buffer.append(udp_message)
         elif len(message_buffer) == message_buffer.max_size:
+            print("\nDumped the messages due to the message_buffer size.")
             write_lock.acquire()
             write_to_disk(message_buffer)
             message_buffer.flush()
@@ -44,5 +48,6 @@ def run_tcp_server():
 def write_to_disk(buffer: Buffer) -> None:
     with open("./syslog.log", "a") as syslog_file:
         for message in buffer:
-            print(f"Wrote the message to disk: {message}")
-            syslog_file.write(f"{message.decode()}\n")
+            print(f"Wrote the message to disk: {message.message}")
+            syslog_file.write(f"{message.message}\n")
+            message.is_written = True

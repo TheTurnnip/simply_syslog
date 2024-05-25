@@ -16,8 +16,10 @@ class Buffer:
         self.add_validated_item(value)
 
     def flush(self):
-        del(self.buffer_items)
-        self.buffer_items = []
+        buffer_item_index = len(self.buffer_items)
+        while buffer_item_index:
+            if self.buffer_items[buffer_item_index].is_written is True:
+                del self.buffer_items[buffer_item_index]
 
     def add_validated_item(self, item):
         if not isinstance(item, self.buffer_type):
