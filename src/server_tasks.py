@@ -52,8 +52,6 @@ def write_to_disk(buffer: Buffer) -> None:
     with open("./syslog.log", "a") as syslog_file:
         for message in buffer:
             print(f"Wrote the message to disk: {message.message}")
-            syslog_file.write(f"{message.message}\n")
+            formated_message = f"{message.message.decode()}\n"
+            syslog_file.write(formated_message)
             message.is_written = True
-
-def parse_syslog_message(message: bytes) -> str:
-    ...
