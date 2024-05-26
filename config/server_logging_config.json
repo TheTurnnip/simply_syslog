@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "debug": {
+      "format": "%(levelname)s | %(asctime)s | %(filename)s: %(message)s"
+    }
+  },
+  "handlers": {
+    "stderr": {
+      "class": "logging.StreamHandler",
+      "level": "DEBUG",
+      "formatter": "debug",
+      "stream": "ext://sys.stdout"
+    }
+  },
+  "loggers": {
+    "debug_logger": {
+      "handlers": [
+        "stderr"
+      ],
+      "level": "DEBUG"
+    },
+    "info_logger": {
+      "handlers": [
+        "stderr"
+      ],
+      "level": "INFO"
+    }
+  }
+}
