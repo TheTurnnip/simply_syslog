@@ -1,5 +1,6 @@
 from src.messages.abstract_message import AbstractMessage
 
+
 class UDPMessage(AbstractMessage):
     """
     Represents a UPD message from a python socket.
@@ -59,7 +60,8 @@ class UDPMessage(AbstractMessage):
             None
         """
         if not isinstance(value, bool):
-            raise TypeError("The type of the is_written property must be bool.")
+            raise TypeError(
+                "The buffer_type of the is_written property must be bool.")
         self._is_written = value
 
     def __str__(self) -> str:

@@ -2,8 +2,8 @@ import json
 import logging
 import logging.config
 
-from src.buffer import Buffer
 from src.messages.udp_message import UDPMessage
+from src.network_buffer import NetworkBuffer
 from src.server import Server
 
 
@@ -25,7 +25,7 @@ def main():
 
 
     # Make a message_buffer to hold incoming messages.
-    message_buffer = Buffer(UDPMessage, buffer_length)
+    message_buffer = NetworkBuffer(UDPMessage, buffer_length)
 
     # Make the syslog server with the config properties.
     syslog_server = Server(protocol, address_port_combination, tcp_port,
