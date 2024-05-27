@@ -7,6 +7,6 @@
   "buffer_length": "32",
   "buffer_lifespan": "5",
   "max_message_size": "1024",
-  "syslog_path": "/var/log/simply_syslog/simply_syslog.log",
-  "debug_messages": "False"
+  "syslog_path": "/var/log/simply_syslog",
+  "debug_messages": "True"
 }

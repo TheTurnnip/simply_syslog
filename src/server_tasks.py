@@ -131,7 +131,7 @@ logging.Logger) -> None:
     Returns:
         None
     """
-    with open(syslog_path, "a") as syslog_file:
+    with open(f"{syslog_path}/syslog.log", "a") as syslog_file:
         for message in buffer:
             formated_message = f"{message.message.decode()}\n"
             syslog_file.write(formated_message)
