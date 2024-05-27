@@ -8,7 +8,7 @@ from src.network_buffer import NetworkBuffer
 
 
 def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
-                       write_lock: threading.Lock,
+                       write_lock: threading.Lock, syslog_path: str,
                        logger: logging.Logger) -> None:
     """
     Monitors a src.NetworkBuffer object to check if it has expired.
@@ -19,6 +19,8 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
         written to file.
         write_lock (threading.Lock): The lock that must be acquired to write
         to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
         logger (logging.Logger): The logger to used to log debug messages to
         the terminal.
 
@@ -45,7 +47,7 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
                 logger.critical(e)
             except TypeError as e:
                 logger.critical(e)
-            write_to_disk(message_buffer, logger)
+            write_to_disk(message_buffer, syslog_path, logger)
             message_buffer.flush()
             write_lock.release()
             # Rests append time due to the message_buffer being cleared.
@@ -54,7 +56,7 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
 
 def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
                    max_message_size: int, write_lock: threading.Lock,
-                   logger: logging.Logger) -> None:
+                   syslog_path: str, logger: logging.Logger) -> None:
     """
     Starts the event loop for the UDP server.
 
@@ -64,6 +66,8 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
         max_message_size (int): The max size a message can be.
         write_lock (threading.Lock): The lock that must be acquired to write
         to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
         logger (logging.Logger): The logger used to log debug messages to
         the terminal.
 
@@ -77,7 +81,6 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
     """
     is_running = True
     logger.info("UDP Server has started.")
-    start_time = time.perf_counter()
     while is_running:
         message, address = server.recvfrom(max_message_size)
         udp_message = UDPMessage(address, message)
@@ -92,7 +95,7 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
         elif len(message_buffer) == message_buffer.max_size:
             logger.debug("Dumped messages due to buffer age.")
             write_lock.acquire()
-            write_to_disk(message_buffer, logger)
+            write_to_disk(message_buffer, syslog_path, logger)
             message_buffer.flush()
             message_buffer.append(udp_message)
             write_lock.release()
@@ -113,19 +116,22 @@ def run_tcp_server() -> None:
     raise NotImplemented("The tcp server has not been added yet.")
 
 
-def write_to_disk(buffer: NetworkBuffer, logger: logging.Logger) -> None:
+def write_to_disk(buffer: NetworkBuffer, syslog_path: str, logger:
+logging.Logger) -> None:
     """
     Loops over a src.NetworkBuffer object and write all items in the buffer
     to a file.
 
     Args:
         buffer (src.NetworkBuffer): The NetworkBuffer to write to disk.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
         logger (logging.Logger): The logger to use for debug messages.
 
     Returns:
         None
     """
-    with open("./syslog.log", "a") as syslog_file:
+    with open(syslog_path, "a") as syslog_file:
         for message in buffer:
             formated_message = f"{message.message.decode()}\n"
             syslog_file.write(formated_message)

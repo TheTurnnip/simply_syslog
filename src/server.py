@@ -37,7 +37,7 @@ class Server:
                  udp_port: int, buffer: NetworkBuffer,
                  max_buffer_size: int, max_buffer_age: int,
                  max_message_size: int, max_tcp_connections: int,
-                 log_debug_messages: bool) -> None:
+                 syslog_path: str, log_debug_messages: bool) -> None:
         """
         Initializes an instance of the Server class.
 
@@ -56,6 +56,8 @@ class Server:
             receive.
             max_tcp_connections (int): The max number of TCP connections.
             log_debug_messages (bool): Whether to print debug messages or not.
+            syslog_path (str): The path to where the syslog messages from remote
+            hosts should be written to.
 
         Returns:
             None
@@ -80,6 +82,7 @@ class Server:
         self.max_buffer_age = int(max_buffer_age)
         self.max_message_size = int(max_message_size)
         self.max_tcp_connections = int(max_tcp_connections)
+        self.syslog_path = syslog_path
         self.buffer = buffer
         # Ensures files are writen to via tasks in the correct order.
         self.write_lock = threading.Lock()
@@ -93,8 +96,9 @@ class Server:
             socket.socket: The UDP socket for the server to receive on.
         """
         udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        udp_server.bind(self.address)
-        self.logger.info(f"Created UDP socket on port {self.address[1]}.")
+        address_and_port = (self.address, self.udp_port)
+        udp_server.bind(address_and_port)
+        self.logger.info(f"Created UDP socket on port {self.tcp_port}.")
         return udp_server
 
     def make_tcp_server(self) -> socket.socket:
@@ -106,10 +110,11 @@ class Server:
             server.
         """
         tcp_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_server.bind(self.address)
+        address_and_port = (self.address, self.tcp_port)
+        tcp_server.bind(address_and_port)
         tcp_server.listen(self.max_tcp_connections)
         self.logger.info(f"Created TCP socket and started listening on port "
-                         f"{self.address[1]}.")
+                         f"{self.tcp_port}.")
         return tcp_server
 
     def start_buffer_age_monitor(self) -> None:
@@ -122,6 +127,7 @@ class Server:
         monitor_buffer_age_args = [self.buffer,
                                    self.max_buffer_age,
                                    self.write_lock,
+                                   self.syslog_path,
                                    self.logger]
         monitor_buffer_age_thread = threading.Thread(target=monitor_buffer_age,
                                                      args=monitor_buffer_age_args)
@@ -147,6 +153,7 @@ class Server:
                                    self.buffer,
                                    self.max_message_size,
                                    self.write_lock,
+                                   self.syslog_path,
                                    self.logger]
                 udp_server_thread = threading.Thread(target=run_udp_server,
                                                      args=udp_server_args)
