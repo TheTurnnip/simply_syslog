@@ -5,23 +5,19 @@ A dead simple open source syslog server written in Python.
 The server is intended to be used with docker to provide a syslog server
 that is easy to configure, deploy, and scale.
 
-# How to Use:
-
-## Table of Contents:
-
- <!-- TOC -->
-
+<!-- TOC -->
 * [simply_syslog](#simply_syslog)
+  * [Features:](#features)
+  * [Upcoming features:](#upcoming-features)
 * [How to Use:](#how-to-use)
-    * [Table of Contents:](#table-of-contents)
-    * [Features:](#features)
-    * [Upcoming features:](#upcoming-features)
-    * [Quick Start Guide (Docker):](#quick-start-guide-docker)
-    * [Quick Start Guide (Bare-Metal):](#quick-start-guide-bare-metal)
-    * [Config settings guide:](#config-settings-guide)
-        * [Some setting details:](#some-setting-details)
-    * [Reporting Vulnerabilities:](#reporting-vulnerabilities)
-
+  * [Quick Start Guide (Docker):](#quick-start-guide-docker)
+  * [Quick Start Guide (Bare-Metal):](#quick-start-guide-bare-metal)
+  * [Docker Requirements and Usage:](#docker-requirements-and-usage)
+    * [Building the image:](#building-the-image)
+    * [Deploying the image:](#deploying-the-image)
+  * [Config settings guide:](#config-settings-guide)
+    * [Some setting details:](#some-setting-details)
+  * [Reporting Vulnerabilities:](#reporting-vulnerabilities)
 <!-- TOC -->
 
 ## Features:
@@ -35,6 +31,8 @@ that is easy to configure, deploy, and scale.
 
 - Support for TCP
 - Support for encryption.
+
+# How to Use:
 
 ## Quick Start Guide (Docker):
 
@@ -88,10 +86,39 @@ To get started running on bare-metal:
    [Refer to this part of the README](#config-settings-guide) for details on the configuration.
 6. To run the server use ``python ./main.py`` on windows or on linux/mac ``python3 ./main.py``
 
+## Docker Requirements and Usage:
+
+Below are details on how to use both the deploy the image and how to build it.
+
+### Building the image:
+
+To Build the image use the `docker build` command.
+
+Here are the steps:
+
+1. Download the repo with `git clone https://github.com/TheTurnnip/simply_syslog.git`
+2. cd into the repo. `cd git clone ./simply_syslog.git`
+3. Build the image using: `docker build --tag simply_syslog .`
+
+### Deploying the image:
+
+Here is what the docker container will need in a deployment:
+
+- It will need you to map the ports that you are using for the server.
+- You will need to bind a volume that will be used to store the log file.
+- Unless you are doing some more advanced networking with the docker container,
+  it is recommended that you do not pass an environment variable to change the server port.
+  The host port can be altered to your needs.
+
+Refer to the [Quick Start Guide (Docker)](#quick-start-guide-docker) for details on what that might look like.
+
+Also refer to the [docker documentation](https://docs.docker.com/reference/cli/docker/container/run/) for details on
+deploying containers.
+
 ## Config settings guide:
 
-When editing the config for the docker container, all of these settings can be edited as
-environment variables.
+When editing the config for the docker container, all of these settings can be edited by passing
+environment variables to the container when it is created.
 
 When editing the config on bare-metal you can edit the config file directly. It can be found at
 *dir_you_copied_repo_to*/simply_syslog/config/config.json
