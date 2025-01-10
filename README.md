@@ -34,6 +34,11 @@ that is easy to configure, deploy, and scale.
 
 # How to Use:
 
+## An explination of the image tags:
+- The "latest" tag is treated as a rolling release, anything merged into the main branch is in the latest tag.
+  Generally it is pretty stable but it you may encounter issues where certain features do not fully function.
+- Tags that are versioned (Ex. v0.5.0) are stable releases with all the current features of that release working.
+
 ## Quick Start Guide (Docker):
 
 This is the recommended method for setting up the server.
