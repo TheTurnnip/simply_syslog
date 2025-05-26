@@ -107,13 +107,26 @@ def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
                    max_message_size: int, write_lock: threading.Lock,
                    syslog_path: str, logger: logging.Logger) -> None:
     """
-    Not implemented yet.
+    Starts the event loop for the TCP server.
+
+    Args:
+        server (socket.Socket): The socket the server receives on.
+        message_buffer (src.NetworkBuffer): The buffer to hold messages in.
+        max_message_size (int): The max size a message can be.
+        write_lock (threading.Lock): The lock that must be acquired to write
+        to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
+        logger (logging.Logger): The logger used to log debug messages to
+        the terminal.
 
     Returns:
         None
 
-    Raises:
-        NotImplemented: The tcp server has not been added yet.
+    Notes:
+        This function is intended to be run as a thread, when calling use a
+        thread to allow for the server to preform other tasks, such as buffer
+        age checking.
     """
     is_running = True
     logger.info("TCP Server has started.")
@@ -137,14 +150,36 @@ def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
                          f"been cleaned up.")
 
 
-def tcp_connection_handler(client_socket: socket.socket, client_address: str,
+def tcp_connection_handler(server: socket.socket, client_address: str,
                            message_buffer: NetworkBuffer, max_message_size: int,
                            write_lock: threading.Lock, syslog_path: str,
-                           logger: logging.Logger):
+                           logger: logging.Logger) -> None:
+    """
+    Handles a TCP connection from a client and adds them to the buffer.
+
+    Args:
+        server (socket.Socket): The socket the server receives on.
+        client_address (str): The address of the client that connected.
+        message_buffer (src.NetworkBuffer): The buffer to hold messages in.
+        max_message_size (int): The max size a message can be.
+        write_lock (threading.Lock): The lock that must be acquired to write
+        to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
+        logger (logging.Logger): The logger used to log debug messages to
+        the terminal.
+
+    Returns: None
+
+    Notes:
+        This function is intended to be run as a thread, when calling use a
+        thread to allow for the server to preform other tasks, such as buffer
+        age checking.
+    """
     client_connected = True
     while client_connected:
         try:
-            message = client_socket.recv(max_message_size)
+            message = server.recv(max_message_size)
             tcp_message = Message(client_address, message)
             logger.debug(tcp_message)
             if len(message_buffer) < message_buffer.max_size:
