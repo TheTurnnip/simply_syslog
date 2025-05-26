@@ -162,22 +162,37 @@ class Server:
             case "TCP":
                 tcp_server = self.make_tcp_server()
                 self.start_buffer_age_monitor()
+                tcp_server_args = [tcp_server,
+                                   self.buffer,
+                                   self.max_message_size,
+                                   self.write_lock,
+                                   self.syslog_path,
+                                   self.logger]
                 tcp_server_thread = threading.Thread(target=run_tcp_server,
-                                                     args=[])
+                                                     args=tcp_server_args)
                 self.logger.info("Starting TCP server...")
                 tcp_server_thread.start()
             case "BOTH":
+                self.logger.warning("Using this feature is experimental!")
                 udp_server = self.make_udp_server()
                 tcp_server = self.make_tcp_server()
                 self.start_buffer_age_monitor()
                 udp_server_args = [udp_server,
                                    self.buffer,
                                    self.max_message_size,
-                                   self.write_lock]
+                                   self.write_lock,
+                                   self.syslog_path,
+                                   self.logger]
+                tcp_server_args = [tcp_server,
+                                   self.buffer,
+                                   self.max_message_size,
+                                   self.write_lock,
+                                   self.syslog_path,
+                                   self.logger]
                 udp_server_thread = threading.Thread(target=run_udp_server,
                                                      args=udp_server_args)
                 tcp_server_thread = threading.Thread(target=run_tcp_server,
-                                                     args=[])
+                                                     args=tcp_server_args)
                 self.logger.info("Starting UDP/TCP server...")
                 udp_server_thread.start()
                 tcp_server_thread.start()

@@ -39,9 +39,9 @@ class NetworkBuffer:
             attribute should be derived from the same AbstractMessage class.
 
         Examples:
-            empty_buffer = NetworkBuffer(UDPMessage, 15)
+            empty_buffer = NetworkBuffer(Message, 15)
             OR
-            created_with_items = NetworkBuffer(UDPMessage, 15, UDPMessage())
+            created_with_items = NetworkBuffer(Message, 15, Message())
         """
         self.buffer_type = buffer_type
         self.max_size = int(max_size)
