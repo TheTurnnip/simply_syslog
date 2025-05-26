@@ -71,5 +71,5 @@ class Message(AbstractMessage):
         Returns:
             str: The string representation of the class data.
         """
-        return (f"Written: {self._is_written} | {self._address}:"
-                f" {self._message}")
+        return (f"Written: {self._is_written} | Address: {self._address} | "
+                f"Message: {self._message.decode('utf-8')}")

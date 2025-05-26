@@ -117,6 +117,7 @@ def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
     """
     is_running = True
     logger.info("TCP Server has started.")
+    connections = []
     while is_running:
         connection, address = server.accept()
         thread = threading.Thread(target=tcp_connection_handler,
@@ -124,36 +125,45 @@ def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
                                         max_message_size, write_lock,
                                         syslog_path, logger))
         thread.start()
+        connections.append(thread)
         logger.info(f"New TCP connection from {address}.")
+
+        dead_threads = [thread for thread in connections
+                        if not thread.is_alive()]
+        for dead_thread in dead_threads:
+            dead_thread.join()
+            connections.remove(dead_thread)
+            logger.debug(f"Connection thread {address} has ended and has "
+                         f"been cleaned up.")
 
 
 def tcp_connection_handler(client_socket: socket.socket, client_address: str,
                            message_buffer: NetworkBuffer, max_message_size: int,
                            write_lock: threading.Lock, syslog_path: str,
                            logger: logging.Logger):
-    print(f"New connection from {client_address}")
     client_connected = True
     while client_connected:
-        message, address = client_socket.recvfrom(max_message_size)
-        udp_message = Message(address, message)
-        logger.debug(udp_message)
-        if len(message_buffer) < message_buffer.max_size:
-            try:
-                message_buffer.append(udp_message)
-            except OverflowError as e:
-                logger.critical(e)
-            except TypeError as e:
-                logger.critical(e)
-        elif len(message_buffer) == message_buffer.max_size:
-            logger.debug("Dumped messages due to buffer age.")
-            write_lock.acquire()
-            write_to_disk(message_buffer, syslog_path, logger)
-            message_buffer.flush()
-            message_buffer.append(udp_message)
-            write_lock.release()
-        logger.debug(f"Revived UDP connection from: {address} || Message: "
-                     f"{message}")
-
+        try:
+            message = client_socket.recv(max_message_size)
+            tcp_message = Message(client_address, message)
+            logger.debug(tcp_message)
+            if len(message_buffer) < message_buffer.max_size:
+                try:
+                    message_buffer.append(tcp_message)
+                except OverflowError as e:
+                    logger.critical(e)
+                except TypeError as e:
+                    logger.critical(e)
+            elif len(message_buffer) == message_buffer.max_size:
+                logger.debug("Dumped messages due to buffer age.")
+                write_lock.acquire()
+                write_to_disk(message_buffer, syslog_path, logger)
+                message_buffer.flush()
+                message_buffer.append(tcp_message)
+                write_lock.release()
+        except ConnectionResetError as e:
+            logger.error(f"The client was forced to disconnect: {e}")
+            client_connected = False
 
 
 def write_to_disk(buffer: NetworkBuffer, syslog_path: str, logger:
