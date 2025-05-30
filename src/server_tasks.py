@@ -42,7 +42,7 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
         if buffer_is_expired and buffer_has_items:
             logger.debug("Dumped messages to file due to buffer age.")
             try:
-                write_lock.aciquire()
+                write_lock.acquire()
             except OverflowError as e:
                 logger.critical(e)
             except TypeError as e:
