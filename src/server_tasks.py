@@ -42,7 +42,7 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
         if buffer_is_expired and buffer_has_items:
             logger.debug("Dumped messages to file due to buffer age.")
             try:
-                write_lock.acquire()
+                write_lock.aciquire()
             except OverflowError as e:
                 logger.critical(e)
             except TypeError as e:
@@ -141,13 +141,13 @@ def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
         connections.append(thread)
         logger.info(f"New TCP connection from {address}.")
 
-        dead_threads = [thread for thread in connections
-                        if not thread.is_alive()]
-        for dead_thread in dead_threads:
-            dead_thread.join()
-            connections.remove(dead_thread)
-            logger.debug(f"Connection thread {address} has ended and has "
-                         f"been cleaned up.")
+        # Clean up dead threads
+        for connection in connections:
+            if not connection.is_alive():
+                connection.join()
+                connections.remove(connection)
+                logger.debug(f"Connection thread {address} has ended and has "
+                             f"been cleaned up.")
 
 
 def tcp_connection_handler(server: socket.socket, client_address: str,
