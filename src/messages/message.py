@@ -1,7 +1,7 @@
 from src.messages.abstract_message import AbstractMessage
 
 
-class UDPMessage(AbstractMessage):
+class Message(AbstractMessage):
     """
     Represents a UPD message from a python socket.
 
@@ -14,7 +14,7 @@ class UDPMessage(AbstractMessage):
 
     def __init__(self, address: str, message: bytes) -> None:
         """
-        Initializes an instance of the UDPMessage class.
+        Initializes an instance of the Message class.
 
         Args:
             address (str): The address that tht message was received from.
@@ -71,5 +71,5 @@ class UDPMessage(AbstractMessage):
         Returns:
             str: The string representation of the class data.
         """
-        return (f"Written: {self._is_written} | {self._address}:"
-                f" {self._message}")
+        return (f"Written: {self._is_written} | Address: {self._address} | "
+                f"Message: {self._message.decode('utf-8')}")

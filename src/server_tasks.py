@@ -3,7 +3,7 @@ import socket
 import threading
 import time
 
-from src.messages.udp_message import UDPMessage
+from src.messages.message import Message
 from src.network_buffer import NetworkBuffer
 
 
@@ -83,7 +83,7 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
     logger.info("UDP Server has started.")
     while is_running:
         message, address = server.recvfrom(max_message_size)
-        udp_message = UDPMessage(address, message)
+        udp_message = Message(address, message)
         logger.debug(udp_message)
         if len(message_buffer) < message_buffer.max_size:
             try:
@@ -103,17 +103,108 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
                      f"{message}")
 
 
-def run_tcp_server() -> None:
+def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
+                   max_message_size: int, write_lock: threading.Lock,
+                   syslog_path: str, logger: logging.Logger) -> None:
     """
-    Not implemented yet.
+    Starts the event loop for the TCP server.
+
+    Args:
+        server (socket.Socket): The socket the server receives on.
+        message_buffer (src.NetworkBuffer): The buffer to hold messages in.
+        max_message_size (int): The max size a message can be.
+        write_lock (threading.Lock): The lock that must be acquired to write
+        to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
+        logger (logging.Logger): The logger used to log debug messages to
+        the terminal.
 
     Returns:
         None
 
-    Raises:
-        NotImplemented: The tcp server has not been added yet.
+    Notes:
+        This function is intended to be run as a thread, when calling use a
+        thread to allow for the server to preform other tasks, such as buffer
+        age checking.
     """
-    raise NotImplemented("The tcp server has not been added yet.")
+    is_running = True
+    logger.info("TCP Server has started.")
+    connections = []
+    while is_running:
+        connection, address = server.accept()
+        thread = threading.Thread(target=tcp_connection_handler,
+                                  args=(connection, address, message_buffer,
+                                        max_message_size, write_lock,
+                                        syslog_path, logger))
+        thread.start()
+        connections.append(thread)
+        logger.info(f"New TCP connection from {address}.")
+
+        # Clean up dead threads
+        for connection in connections:
+            if not connection.is_alive():
+                connection.join()
+                connections.remove(connection)
+                logger.debug(f"Connection thread {address} has ended and has "
+                             f"been cleaned up.")
+
+
+def tcp_connection_handler(server: socket.socket, client_address: str,
+                           message_buffer: NetworkBuffer, max_message_size: int,
+                           write_lock: threading.Lock, syslog_path: str,
+                           logger: logging.Logger) -> None:
+    """
+    Handles a TCP connection from a client and adds them to the buffer.
+
+    Args:
+        server (socket.Socket): The socket the server receives on.
+        client_address (str): The address of the client that connected.
+        message_buffer (src.NetworkBuffer): The buffer to hold messages in.
+        max_message_size (int): The max size a message can be.
+        write_lock (threading.Lock): The lock that must be acquired to write
+        to a file.
+        syslog_path (str): The path to where the syslog messages from remote
+        hosts should be written to.
+        logger (logging.Logger): The logger used to log debug messages to
+        the terminal.
+
+    Returns: None
+
+    Notes:
+        This function is intended to be run as a thread, when calling use a
+        thread to allow for the server to preform other tasks, such as buffer
+        age checking.
+    """
+    client_connected = True
+    while client_connected:
+        try:
+            message = server.recv(max_message_size)
+            tcp_message = Message(client_address, message)
+            logger.debug(tcp_message)
+            # Close the connection if the message is empty or the connection
+            # is closed by client.
+            if message == b"":
+                server.close()
+                logger.info(f"Client {client_address} has disconnected.")
+                break
+            if len(message_buffer) < message_buffer.max_size:
+                try:
+                    message_buffer.append(tcp_message)
+                except OverflowError as e:
+                    logger.critical(e)
+                except TypeError as e:
+                    logger.critical(e)
+            elif len(message_buffer) == message_buffer.max_size:
+                logger.debug("Dumped messages due to buffer age.")
+                write_lock.acquire()
+                write_to_disk(message_buffer, syslog_path, logger)
+                message_buffer.flush()
+                message_buffer.append(tcp_message)
+                write_lock.release()
+        except ConnectionResetError as e:
+            logger.error(f"The client was forced to disconnect: {e}")
+            client_connected = False
 
 
 def write_to_disk(buffer: NetworkBuffer, syslog_path: str, logger:
@@ -135,5 +226,5 @@ logging.Logger) -> None:
         for message in buffer:
             formated_message = f"{message.message.decode()}\n"
             syslog_file.write(formated_message)
-            logger.debug(f"Wrote message to disk: {message.message}")
+            logger.debug(f"Wrote message to disk: {message.message.decode()}")
             message.is_written = True
