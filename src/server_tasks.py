@@ -182,6 +182,12 @@ def tcp_connection_handler(server: socket.socket, client_address: str,
             message = server.recv(max_message_size)
             tcp_message = Message(client_address, message)
             logger.debug(tcp_message)
+            # Close the connection if the message is empty or the connection
+            # is closed by client.
+            if message == b"":
+                server.close()
+                logger.info(f"Client {client_address} has disconnected.")
+                break
             if len(message_buffer) < message_buffer.max_size:
                 try:
                     message_buffer.append(tcp_message)
