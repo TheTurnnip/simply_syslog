@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 
-from syslog_formats import SyslogFormat
+from src.syslog.syslog_formats import SyslogFormat
 
 
 class SyslogMessage:
@@ -16,6 +16,11 @@ class SyslogMessage:
         print(f"Severity: {msg.severity}")
         print(f"Timestamp: {msg.datetime}")
         print(f"NetworkMessage: {msg.message}")
+
+    Notes:
+        This has not been tested extensively with cisco devices the main
+        method of testing has been using log4j using the RFC5424 and RFC3164
+        formats.
     """
 
     # Facility codes
@@ -48,7 +53,8 @@ class SyslogMessage:
             r'<(?P<pri>\d+)>(?P<timestamp>[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{'
             r'2}:\d{2}) '
             r'(?P<hostname>[\w\-\.:%]+) '
-            r'(?P<tag>[a-zA-Z0-9_/.-]+)(?:\[(?P<pid>\d+)\])?: '
+            r'(?P<tag>[a-zA-Z0-9_/.-]+)(?:\[(?P<pid>\d+)\])?'
+            r':?\s+'
             r'(?P<message>.*)'
         ),
         SyslogFormat.LEGACY: re.compile(
@@ -67,8 +73,8 @@ class SyslogMessage:
         SyslogFormat.CISCO: re.compile(
             r'<(?P<pri>\d+)>(?P<timestamp>[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{'
             r'2}:\d{2}(?:\.\d+)?'
-            r'(?:\s+[A-Za-z]{3,4})?): %(?P<facility>[A-Z0-9]+)-('
-            r'?P<severity>\d)-(?P<mnemonic>[A-Z0-9_]+): '
+            r'(?:\s+[A-Za-z]{3,4})?): %(?P<facility>[A-Z0-9]+)-'
+            r'(?P<severity>\d)-(?P<mnemonic>[A-Z0-9_]+): '
             r'(?P<message>.*)'
         )
     }
@@ -465,48 +471,4 @@ class SyslogMessage:
         return result
 
     def __str__(self) -> str:
-        """String representation of the syslog message."""
-        if not self.is_valid:
-            return f"Invalid syslog message: {self.raw_message}"
-
-        parts = [f"Format: {self.format_name}"]
-
-        if self.pri is not None:
-            parts.append(
-                f"Priority: {self.pri} (Facility: {self.facility}, Severity: "
-                f"{self.severity})")
-
-        if self.datetime:
-            parts.append(f"Timestamp: {self.datetime.isoformat()}")
-        elif self.timestamp:
-            parts.append(f"Timestamp: {self.timestamp}")
-
-        if self.hostname:
-            parts.append(f"Host: {self.hostname} ({self.host_type})")
-
-        if self.format == SyslogFormat.RFC5424:
-            parts.append(
-                f"App: {self.app_name}, ProcID: {self.proc_id}, MsgID: "
-                f"{self.msg_id}")
-
-            if self.structured_data_parsed:
-                sd_parts = []
-                for sd in self.structured_data_parsed:
-                    params = ", ".join([f"{k}={v}" for k, v in
-                                        sd.get("parameters", {}).items()])
-                    sd_parts.append(f"{sd['sd_id']}: {params}")
-                parts.append(f"Structured Data: {'; '.join(sd_parts)}")
-
-        elif self.format in (
-                SyslogFormat.RFC3164, SyslogFormat.LEGACY, SyslogFormat.NO_PRI):
-            parts.append(
-                f"Tag: {self.tag}" + (f", PID: {self.pid}" if self.pid else ""))
-
-        elif self.format == SyslogFormat.CISCO:
-            parts.append(
-                f"Cisco: {self.cisco_facility}-{self.cisco_severity}-"
-                f"{self.cisco_mnemonic}")
-
-        parts.append(f"NetworkMessage: {self.message}")
-
-        return "\n".join(parts)
+        return self.raw_message

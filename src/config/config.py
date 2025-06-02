@@ -14,7 +14,7 @@ class Config:
     max_message_size: int
     syslog_path: str
     debug_messages: bool
-    enable_db_writes: bool
+    enable_database_writes: bool
     db_connection_string: str
 
     def __init__(self, config_path: str):

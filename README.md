@@ -22,14 +22,14 @@ that is easy to configure, deploy, and scale.
 
 ## Features:
 
-- UDP syslog support
+- UDP and TCP syslog support
 - Supports docker.
 - Highly configurable
 - Able to handle large numbers of requests
 
 ## Upcoming features:
 
-- Support for TCP
+- Web interface for viewing logs.
 - Support for encryption.
 
 # How to Use:

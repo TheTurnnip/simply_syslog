@@ -3,7 +3,7 @@ import logging.config
 import socket
 import threading
 
-from config import Config
+from src.config.config import Config
 from src.network_buffer import NetworkBuffer
 from src.server_tasks import (monitor_buffer_age, run_udp_server,
                               run_tcp_server)
@@ -99,9 +99,8 @@ class Server:
             None
         """
         monitor_buffer_age_args = [self.buffer,
-                                   self.config.buffer_lifespan,
+                                   self.config,
                                    self.write_lock,
-                                   self.config.syslog_path,
                                    self.logger]
         monitor_buffer_age_thread = threading.Thread(target=monitor_buffer_age,
                                                      args=monitor_buffer_age_args)

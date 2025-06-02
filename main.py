@@ -2,7 +2,7 @@ import json
 import logging
 import logging.config
 
-from config import Config
+from src.config.config import Config
 from src.messages.network_message import NetworkMessage
 from src.network_buffer import NetworkBuffer
 from src.server import Server

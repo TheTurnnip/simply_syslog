@@ -18,7 +18,9 @@ def main():
         "buffer_lifespan": os.environ["BUFFER_LIFESPAN"],
         "max_message_size": os.environ["MAX_MESSAGE_SIZE"],
         "syslog_path": os.environ["SYSLOG_PATH"],
-        "debug_messages": os.environ["DEBUG_MESSAGES"]
+        "debug_messages": os.environ["DEBUG_MESSAGES"],
+        "enable_db_writes": os.environ["ENABLE_DB_WRITES"],
+        "db_connection_string": os.environ["DB_CONNECTION_STRING"]
     }
 
     # Display the config settings in the terminal.

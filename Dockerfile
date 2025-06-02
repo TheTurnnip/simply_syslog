@@ -1,7 +1,7 @@
 FROM python
 
 # Sets the enviroment variables used for configuration of the server.
-ENV PROTOCOL "UDP"
+ENV PROTOCOL "BOTH"
 ENV BIND_ADDRESS "0.0.0.0"
 ENV UDP_PORT "514"
 ENV TCP_PORT "514"
@@ -10,7 +10,9 @@ ENV BUFFER_LENGTH "32"
 ENV BUFFER_LIFESPAN "5"
 ENV MAX_MESSAGE_SIZE "1024"
 ENV SYSLOG_PATH "/var/log/simply_syslog/"
-ENV DEBUG_MESSAGES "True"
+ENV DEBUG_MESSAGES true
+ENV ENABLE_DB_WRITES true
+ENV DB_CONNECTION_STRING ""
 
 # Makes the needed paths for storing the server and storing the log file.
 RUN mkdir "/simply_syslog/"

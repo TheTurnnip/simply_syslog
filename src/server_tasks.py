@@ -3,25 +3,24 @@ import socket
 import threading
 import time
 
-from config import Config
+from src.config.config import Config
 from src.messages.network_message import NetworkMessage
 from src.network_buffer import NetworkBuffer
+from src.syslog.syslog_message import SyslogMessage
 
 
-def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
-                       write_lock: threading.Lock, syslog_path: str,
+def monitor_buffer_age(message_buffer: NetworkBuffer, config: Config,
+                       write_lock: threading.Lock,
                        logger: logging.Logger) -> None:
     """
     Monitors a src.NetworkBuffer object to check if it has expired.
 
     Args:
+        config (config.Config): The config that has the server's settings.
         message_buffer (NetworkBuffer): The buffer to monitor.
-        max_buffer_age (int): The max age a buffer can be before it is
         written to file.
         write_lock (threading.Lock): The lock that must be acquired to write
         to a file.
-        syslog_path (str): The path to where the syslog messages from remote
-        hosts should be written to.
         logger (logging.Logger): The logger to used to log debug messages to
         the terminal.
 
@@ -38,7 +37,7 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
         buffer_append_time = message_buffer.last_append_time
         time_from_last_append = current_time - buffer_append_time
         buffer_length = len(message_buffer)
-        buffer_is_expired = time_from_last_append > max_buffer_age
+        buffer_is_expired = time_from_last_append > config.buffer_lifespan
         buffer_has_items = buffer_length >= 1
         if buffer_is_expired and buffer_has_items:
             logger.debug("Dumped messages to file due to buffer age.")
@@ -48,7 +47,9 @@ def monitor_buffer_age(message_buffer: NetworkBuffer, max_buffer_age: int,
                 logger.critical(e)
             except TypeError as e:
                 logger.critical(e)
-            write_to_disk(message_buffer, syslog_path, logger)
+            write_to_disk(message_buffer, config.syslog_path, logger)
+            if config.enable_database_writes:
+                write_to_db(message_buffer, logger)
             message_buffer.flush()
             write_lock.release()
             # Rests append time due to the message_buffer being cleared.
@@ -95,14 +96,14 @@ def run_udp_server(server: socket.socket, message_buffer: NetworkBuffer,
             logger.debug("Dumped messages due to buffer age.")
             write_lock.acquire()
             write_to_disk(message_buffer, config.syslog_path, logger)
-            if config.enable_db_writes:
+            if config.enable_database_writes:
                 write_to_db(message_buffer, logger)
             message_buffer.flush()
             message_buffer.append(udp_message)
             write_lock.release()
         logger.debug(
             f"Revived UDP connection from: {address} || NetworkMessage: "
-                     f"{message}")
+            f"{message}")
 
 
 def run_tcp_server(server: socket.socket, message_buffer: NetworkBuffer,
@@ -196,7 +197,7 @@ def tcp_connection_handler(server: socket.socket, client_address: str,
                 logger.debug("Dumped messages due to buffer age.")
                 write_lock.acquire()
                 write_to_disk(message_buffer, config.syslog_path, logger)
-                if config.enable_db_writes:
+                if config.enable_database_writes:
                     write_to_db(message_buffer, logger)
                 message_buffer.flush()
                 message_buffer.append(tcp_message)
@@ -223,11 +224,19 @@ def write_to_disk(buffer: NetworkBuffer, syslog_path: str,
     """
     with open(f"{syslog_path}/syslog.log", "a") as syslog_file:
         for message in buffer:
-            formated_message = f"{message.message.decode()}\n"
-            syslog_file.write(formated_message)
-            logger.debug(f"Wrote message to disk: {message.message.decode()}")
+            syslog_message = SyslogMessage(message.message.decode())
+            if syslog_message.is_valid:
+                syslog_file.write(f"{syslog_message.raw_message}\n")
+                logger.debug(
+                    f"Wrote message to disk: {message.message.decode()}")
+            else:
+                logger.error(f"Non-compliant message was not logged! "
+                             f"Message: {message.message.decode()}")
             message.is_written = True
 
 
 def write_to_db(buffer: NetworkBuffer, logger: logging.Logger):
-    ...
+    for message in buffer:
+        syslog_message = SyslogMessage(message.message.decode())
+        db_data = syslog_message.to_db_row()
+        logger.debug(db_data)
