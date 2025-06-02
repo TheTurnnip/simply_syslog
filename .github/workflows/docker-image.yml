@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  
-      
+
       - 
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -27,18 +27,18 @@ jobs:
       - 
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      # Determine if the workflow is running on main branch
+
+      # Determine if the workflow is running on main branch or a tag from any branch
       - 
         name: Set branch flag
         id: branch_check
         run: |
-          if [[ ${{ github.ref }} == 'refs/heads/main' || (${{ github.ref_type }} == 'tag' && ${{ github.ref_name }} == refs/tags/* && $(git branch -r --contains ${{ github.ref_name }} | grep 'origin/main') ) ]]; then
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "is_main=true" >> $GITHUB_OUTPUT
           else
             echo "is_main=false" >> $GITHUB_OUTPUT
           fi
-      
+
       -
         name: Docker meta for main branch
         id: meta_main
@@ -50,18 +50,29 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
-      
+
       -
-        name: Docker meta for non-main branch
-        id: meta_non_main
-        if: steps.branch_check.outputs.is_main != 'true'
+        name: Docker meta for tag
+        id: meta_tag
+        if: startsWith(github.ref, 'refs/tags/')
         uses: docker/metadata-action@v5
         with:
           images: |
             ryansteffan/simply_syslog
           tags: |
             type=semver,pattern={{version}}
-      
+
+      -
+        name: Docker meta for non-main branch
+        id: meta_non_main
+        if: steps.branch_check.outputs.is_main != 'true' && !startsWith(github.ref, 'refs/tags/')
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ryansteffan/simply_syslog
+          tags: |
+            type=ref,event=branch
+
       -
         name: Login to DockerHub
         if: github.event_name != 'pull_request'
@@ -69,7 +80,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      
+
       -
         name: Build and push (main)
         if: steps.branch_check.outputs.is_main == 'true' && github.event_name != 'pull_request'
@@ -80,10 +91,21 @@ jobs:
           push: true
           tags: ${{ steps.meta_main.outputs.tags }}
           labels: ${{ steps.meta_main.outputs.labels }}
-      
+
+      -
+        name: Build and push (tag)
+        if: startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta_tag.outputs.tags }}
+          labels: ${{ steps.meta_tag.outputs.labels }}
+
       -
         name: Build and push (non-main)
-        if: steps.branch_check.outputs.is_main != 'true' && github.event_name != 'pull_request'
+        if: steps.branch_check.outputs.is_main != 'true' && !startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -91,7 +113,7 @@ jobs:
           push: true
           tags: ${{ steps.meta_non_main.outputs.tags }}
           labels: ${{ steps.meta_non_main.outputs.labels }}
-      
+
       -
         name: Build (PR)
         if: github.event_name == 'pull_request'
