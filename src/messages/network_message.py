@@ -1,7 +1,7 @@
 from src.messages.abstract_message import AbstractMessage
 
 
-class Message(AbstractMessage):
+class NetworkMessage(AbstractMessage):
     """
     Represents a UPD message from a python socket.
 
@@ -14,7 +14,7 @@ class Message(AbstractMessage):
 
     def __init__(self, address: str, message: bytes) -> None:
         """
-        Initializes an instance of the Message class.
+        Initializes an instance of the NetworkMessage class.
 
         Args:
             address (str): The address that tht message was received from.
@@ -72,4 +72,4 @@ class Message(AbstractMessage):
             str: The string representation of the class data.
         """
         return (f"Written: {self._is_written} | Address: {self._address} | "
-                f"Message: {self._message.decode('utf-8')}")
+                f"NetworkMessage: {self._message.decode('utf-8')}")

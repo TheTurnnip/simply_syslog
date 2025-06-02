@@ -39,9 +39,10 @@ class NetworkBuffer:
             attribute should be derived from the same AbstractMessage class.
 
         Examples:
-            empty_buffer = NetworkBuffer(Message, 15)
+            empty_buffer = NetworkBuffer(NetworkMessage, 15)
             OR
-            created_with_items = NetworkBuffer(Message, 15, Message())
+            created_with_items = NetworkBuffer(NetworkMessage, 15,
+            NetworkMessage())
         """
         self.buffer_type = buffer_type
         self.max_size = int(max_size)

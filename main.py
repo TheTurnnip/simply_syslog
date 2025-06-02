@@ -2,37 +2,20 @@ import json
 import logging
 import logging.config
 
-from src.messages.message import Message
+from config import Config
+from src.messages.network_message import NetworkMessage
 from src.network_buffer import NetworkBuffer
 from src.server import Server
 
 
 def main():
-    # Read in the server config file.
-    with open("config/config.json", "r") as config:
-        config = json.load(config)
-
-    # Assign the items of the config to variables.
-    protocol = config["protocol"]
-    bind_address = config["bind_address"]
-    udp_port = int(config["udp_port"])
-    tcp_port = int(config["tcp_port"])
-    max_tcp_connections = int(config["max_tcp_connections"])
-    buffer_length = int(config["buffer_length"])
-    buffer_lifespan = int(config["buffer_lifespan"])
-    max_message_size = int(config["max_message_size"])
-    syslog_path = config["syslog_path"]
-    do_debug_logging = True if config["debug_messages"] == "True" else False
-
+    server_config = Config("config/config.json")
 
     # Make a message_buffer to hold incoming messages.
-    message_buffer = NetworkBuffer(Message, buffer_length)
+    message_buffer = NetworkBuffer(NetworkMessage, server_config.buffer_length)
 
-    # Make the syslog server with the config properties.
-    syslog_server = Server(protocol, bind_address, tcp_port, udp_port,
-                           message_buffer, buffer_length, buffer_lifespan,
-                           max_message_size, max_tcp_connections, syslog_path,
-                           do_debug_logging)
+    # Make the syslog server with the config_data properties.
+    syslog_server = Server(server_config, message_buffer)
 
     syslog_server.start()
 
